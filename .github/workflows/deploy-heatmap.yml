@@ -28,11 +28,20 @@ jobs:
           mkdir -p public
           cp site/index.html public/index.html
 
-          # Per-day submission counts derived from commit history -> data.json
-          git log --pretty=format:'%ad' --date=short \
-            | sort | uniq -c \
+          # Per-day submission counts derived from commit history -> data.json.
+          # "Add: ..." counts as 1; "Bulk sync: N submissions" counts as N;
+          # other commits (repo init, this workflow, etc.) count as 0.
+          git log --pretty=format:'%ad%x09%s' --date=short \
+            | awk -F'\t' '{
+                date=$1; s=$2; w=0;
+                if (s ~ /^Bulk sync: [0-9]+ submissions/) {
+                  n=s; sub(/^Bulk sync: /,"",n); sub(/ submissions.*/,"",n); w=n+0;
+                } else if (s ~ /^Add:/) { w=1; }
+                sum[date]+=w;
+              } END { for (d in sum) if (sum[d]>0) print sum[d], d }' \
+            | sort -k2 \
             | jq -Rn '[inputs
-                | capture("\\s*(?<c>[0-9]+)\\s+(?<d>[0-9-]+)")
+                | capture("(?<c>[0-9]+)\\s+(?<d>[0-9-]+)")
                 | {(.d): (.c | tonumber)}] | add // {}' \
             > public/data.json
 
