@@ -4,6 +4,24 @@
 
 ---
 
+## 🔥 Habit Streak Tracker
+
+A live, GitHub-style contribution heatmap of daily problem-solving activity:
+
+### 👉 **[saitarrun.github.io/neetcode-submissions](https://saitarrun.github.io/neetcode-submissions/)**
+
+It shows your current streak, longest streak, problems solved, active days, and a per-day activity grid with a year selector.
+
+**How it stays up to date**
+
+- A GitHub Action ([`.github/workflows/deploy-heatmap.yml`](.github/workflows/deploy-heatmap.yml)) rebuilds the page on **every push to `main`** (i.e. every submission) and deploys it to the `gh-pages` branch.
+- Daily counts are derived from commit history: each `Add: ...` commit counts as one submission, and a `Bulk sync: N submissions` commit counts as N. A submission appears on the **day it was committed**.
+- **Problems Solved** counts distinct problem folders; **Total activity** reflects every submission.
+- Color buckets follow the GitHub style — empty (white), light green (1–4), medium green (5–10), dark green (>10).
+- The current/longest streak is recalculated in the browser against today's date on every page load, so the streak stays accurate even between deploys.
+
+---
+
 ## What is this?
 
 [NeetCode.io](https://neetcode.io) is a coding interview preparation platform featuring curated problems, video solutions, and an in-browser code editor. This repository is automatically populated with your accepted (or all) solutions using the **GitHub Sync** feature.
