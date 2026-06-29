@@ -126,7 +126,7 @@
     <div class="stats">
       <div class="stat"><div class="num" id="stat-current">0<span class="unit">days</span></div><div class="label">Current Streak</div></div>
       <div class="stat"><div class="num" id="stat-longest">0<span class="unit">days</span></div><div class="label">Longest Streak</div></div>
-      <div class="stat"><div class="num" id="stat-total">0</div><div class="label">Total Submissions</div></div>
+      <div class="stat"><div class="num" id="stat-problems">0</div><div class="label">Problems Solved</div></div>
       <div class="stat"><div class="num" id="stat-active">0<span class="unit">days</span></div><div class="label">Active Days</div></div>
     </div>
 
@@ -160,12 +160,15 @@
     // Fallback data (used only if data.json can't be loaded). The deployed
     // data.json is regenerated from git history on every push to main.
     const FALLBACK = {
-      "2026-06-01": 25,
-      "2026-06-02": 5,
-      "2026-06-04": 10,
-      "2026-06-17": 1,
-      "2026-06-18": 4,
-      "2026-06-21": 1
+      days: {
+        "2026-06-01": 25,
+        "2026-06-02": 5,
+        "2026-06-04": 10,
+        "2026-06-17": 1,
+        "2026-06-18": 4,
+        "2026-06-21": 1
+      },
+      problemsSolved: 16
     };
 
     const DAY = 86400000;
@@ -255,20 +258,23 @@
       }
     }
 
-    function renderStats(DATA) {
+    function renderStats(DATA, problemsSolved) {
       const days = Object.keys(DATA).sort();
-      const total = days.reduce((s, d) => s + DATA[d], 0);
       const cur = currentStreak(days);
       document.getElementById("stat-current").firstChild.textContent = cur;
       document.getElementById("stat-longest").firstChild.textContent = longestStreak(days);
-      document.getElementById("stat-total").textContent = total;
+      document.getElementById("stat-problems").textContent = problemsSolved;
       document.getElementById("stat-active").firstChild.textContent = days.length;
       document.getElementById("streak-days").textContent = cur;
     }
 
-    function init(DATA) {
-      const data = DATA && Object.keys(DATA).length ? DATA : FALLBACK;
-      renderStats(data);
+    function init(payload) {
+      // Accept the new shape { days, problemsSolved } or a bare day-count map.
+      const valid = payload && (payload.days || Object.keys(payload).length);
+      const src = valid ? payload : FALLBACK;
+      const data = src.days || src;
+      const problemsSolved = src.problemsSolved != null ? src.problemsSolved : FALLBACK.problemsSolved;
+      renderStats(data, problemsSolved);
 
       const years = [...new Set(Object.keys(data).map((d) => +d.slice(0, 4)))];
       const curYear = new Date().getUTCFullYear();

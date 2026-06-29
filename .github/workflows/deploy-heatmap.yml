@@ -28,10 +28,10 @@ jobs:
           mkdir -p public
           cp site/index.html public/index.html
 
-          # Per-day submission counts derived from commit history -> data.json.
+          # Per-day submission counts derived from commit history.
           # "Add: ..." counts as 1; "Bulk sync: N submissions" counts as N;
           # other commits (repo init, this workflow, etc.) count as 0.
-          git log --pretty=format:'%ad%x09%s' --date=short \
+          DAYS=$(git log --pretty=format:'%ad%x09%s' --date=short \
             | awk -F'\t' '{
                 date=$1; s=$2; w=0;
                 if (s ~ /^Bulk sync: [0-9]+ submissions/) {
@@ -42,8 +42,13 @@ jobs:
             | sort -k2 \
             | jq -Rn '[inputs
                 | capture("(?<c>[0-9]+)\\s+(?<d>[0-9-]+)")
-                | {(.d): (.c | tonumber)}] | add // {}' \
-            > public/data.json
+                | {(.d): (.c | tonumber)}] | add // {}')
+
+          # Problems solved = number of distinct problem folders.
+          PROBLEMS=$(find "Data Structures & Algorithms" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+
+          jq -n --argjson days "$DAYS" --argjson problems "$PROBLEMS" \
+            '{days: $days, problemsSolved: $problems}' > public/data.json
 
           echo "Generated data.json:"
           cat public/data.json
