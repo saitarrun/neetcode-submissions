@@ -6,11 +6,13 @@
 
 ## 🔥 Habit Streak Tracker
 
-A live, GitHub-style contribution heatmap of daily problem-solving activity:
+A live, GitHub-style contribution heatmap of daily problem-solving activity. The badge below is regenerated on every push, so it always reflects the latest progress:
 
-### 👉 **[saitarrun.github.io/neetcode-submissions](https://saitarrun.github.io/neetcode-submissions/)**
+[![Habit Streak](assets/streak.svg)](https://saitarrun.github.io/neetcode-submissions/)
 
-It shows your current streak, longest streak, problems solved, active days, and a per-day activity grid with a year selector.
+### 👉 Interactive version: **[saitarrun.github.io/neetcode-submissions](https://saitarrun.github.io/neetcode-submissions/)**
+
+The interactive page adds hover tooltips and a year selector on top of the same stats.
 
 **How it stays up to date**
 

@@ -4,6 +4,9 @@ name: Deploy habit streak heatmap
 on:
   push:
     branches: [main]
+    # Ignore the bot's own SVG commit so it doesn't re-trigger this workflow.
+    paths-ignore:
+      - "assets/streak.svg"
   workflow_dispatch:
 
 permissions:
@@ -22,36 +25,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build site
+      - name: Build data.json + README badge (assets/streak.svg)
         run: |
           set -euo pipefail
+          python3 scripts/build_streak.py
           mkdir -p public
           cp site/index.html public/index.html
-
-          # Per-day submission counts derived from commit history.
-          # "Add: ..." counts as 1; "Bulk sync: N submissions" counts as N;
-          # other commits (repo init, this workflow, etc.) count as 0.
-          DAYS=$(git log --pretty=format:'%ad%x09%s' --date=short \
-            | awk -F'\t' '{
-                date=$1; s=$2; w=0;
-                if (s ~ /^Bulk sync: [0-9]+ submissions/) {
-                  n=s; sub(/^Bulk sync: /,"",n); sub(/ submissions.*/,"",n); w=n+0;
-                } else if (s ~ /^Add:/) { w=1; }
-                sum[date]+=w;
-              } END { for (d in sum) if (sum[d]>0) print sum[d], d }' \
-            | sort -k2 \
-            | jq -Rn '[inputs
-                | capture("(?<c>[0-9]+)\\s+(?<d>[0-9-]+)")
-                | {(.d): (.c | tonumber)}] | add // {}')
-
-          # Problems solved = number of distinct problem folders.
-          PROBLEMS=$(find "Data Structures & Algorithms" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
-
-          jq -n --argjson days "$DAYS" --argjson problems "$PROBLEMS" \
-            '{days: $days, problemsSolved: $problems}' > public/data.json
-
+          cp assets/streak.svg public/streak.svg
           echo "Generated data.json:"
           cat public/data.json
+
+      - name: Commit updated badge to main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/streak.svg
+          if git diff --cached --quiet; then
+            echo "Badge unchanged; nothing to commit."
+          else
+            git commit -m "chore: update streak badge [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
