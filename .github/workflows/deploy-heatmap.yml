@@ -1,0 +1,48 @@
+name: Deploy habit streak heatmap
+
+# Rebuild and redeploy the heatmap on every submission (push to main).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: heatmap-pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build site
+        run: |
+          set -euo pipefail
+          mkdir -p public
+          cp site/index.html public/index.html
+
+          # Per-day submission counts derived from commit history -> data.json
+          git log --pretty=format:'%ad' --date=short \
+            | sort | uniq -c \
+            | jq -Rn '[inputs
+                | capture("\\s*(?<c>[0-9]+)\\s+(?<d>[0-9-]+)")
+                | {(.d): (.c | tonumber)}] | add // {}' \
+            > public/data.json
+
+          echo "Generated data.json:"
+          cat public/data.json
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: gh-pages
+          force_orphan: true
