@@ -95,7 +95,7 @@ def esc(s):
 
 
 def build_svg(days, problems, stats):
-    total, active, longest, current = stats
+    _total, active, longest, current = stats
     today = datetime.date.today()
     year = today.year
     jan1 = datetime.date(year, 1, 1)
