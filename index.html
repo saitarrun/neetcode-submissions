@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NeetCode Habit Streak</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --soft: #f6f8fa;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --muted: #656d76;
+    --accent: #2da44e;
+    --cell: 13px;
+    --gap: 3px;
+    --l0: #ffffff;
+    --l1: #a8e0b8;
+    --l3: #2da44e;
+    --l4: #116329;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 20px 64px; }
+  header h1 { font-size: 28px; margin: 0 0 4px; }
+  header p { color: var(--muted); margin: 0 0 32px; font-size: 15px; }
+  header a { color: var(--accent); text-decoration: none; }
+  header a:hover { text-decoration: underline; }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 32px; }
+  .stat {
+    flex: 1 1 160px;
+    background: var(--soft);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .stat .num { font-size: 30px; font-weight: 700; line-height: 1; }
+  .stat .num .unit { font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .stat .label { color: var(--muted); font-size: 13px; margin-top: 8px; text-transform: uppercase; letter-spacing: .04em; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px 22px;
+  }
+  .cal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .cal-head h2 { font-size: 20px; font-weight: 700; margin: 0; }
+  .streak-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  select#year-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23656d76' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 34px 8px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .scroll { overflow-x: auto; padding-bottom: 6px; }
+  .cal { display: inline-block; }
+  .months {
+    display: grid;
+    grid-template-rows: 14px;
+    column-gap: var(--gap);
+    margin-bottom: 4px;
+  }
+  .months span { grid-row: 1; align-self: end; font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+  .heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, var(--cell)); gap: var(--gap); }
+  .cell { width: var(--cell); height: var(--cell); border-radius: 3px; background: var(--l0); border: 1px solid rgba(27, 31, 36, 0.08); }
+  .cell.l1 { background: var(--l1); }
+  .cell.l3 { background: var(--l3); }
+  .cell.l4 { background: var(--l4); }
+  .cell.out { opacity: .35; }
+  .cell:hover { outline: 1px solid var(--muted); outline-offset: -1px; }
+
+  .legend { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 14px; color: var(--muted); font-size: 12px; }
+  .legend .cell { width: 11px; height: 11px; }
+
+  footer { color: var(--muted); font-size: 13px; margin-top: 32px; text-align: center; }
+
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: #1f2328;
+    color: #fff;
+    padding: 6px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate(-50%, -100%);
+    transition: opacity .08s;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🔥 NeetCode Habit Streak</h1>
+      <p>Daily problem-solving activity from
+        <a href="https://github.com/saitarrun/neetcode-submissions">saitarrun/neetcode-submissions</a>.</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-current">0<span class="unit">days</span></div><div class="label">Current Streak</div></div>
+      <div class="stat"><div class="num" id="stat-longest">0<span class="unit">days</span></div><div class="label">Longest Streak</div></div>
+      <div class="stat"><div class="num" id="stat-problems">0</div><div class="label">Problems Solved</div></div>
+      <div class="stat"><div class="num" id="stat-active">0<span class="unit">days</span></div><div class="label">Active Days</div></div>
+    </div>
+
+    <div class="card">
+      <div class="cal-head">
+        <div>
+          <h2>Habit Streak</h2>
+          <div class="streak-sub">Streak: <span id="streak-days">0</span> days</div>
+        </div>
+        <select id="year-select" aria-label="Select year"></select>
+      </div>
+      <div class="scroll">
+        <div class="cal">
+          <div class="months" id="months"></div>
+          <div class="heatmap" id="heatmap"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="cell l1"></span> 1&ndash;4
+        <span class="cell l3"></span> 5&ndash;10
+        <span class="cell l4"></span> &gt;10
+      </div>
+    </div>
+
+    <footer>Keep the streak alive. One problem a day.</footer>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <script>
+    // Fallback data (used only if data.json can't be loaded). The deployed
+    // data.json is regenerated from git history on every push to main.
+    const FALLBACK = {
+      days: {
+        "2026-06-01": 25,
+        "2026-06-02": 5,
+        "2026-06-04": 10,
+        "2026-06-17": 1,
+        "2026-06-18": 4,
+        "2026-06-21": 1
+      },
+      problemsSolved: 16
+    };
+
+    const DAY = 86400000;
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const fmt = (d) => d.toISOString().slice(0, 10);
+    const parse = (s) => { const [y, m, dd] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, dd)); };
+    const pretty = (s) => parse(s).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+
+    function level(c) {
+      if (!c) return 0;       // no activity
+      if (c > 10) return 4;   // dark green  (more than 10)
+      if (c >= 5) return 3;   // medium green (5-10)
+      return 1;               // light green (1-4)
+    }
+
+    function longestStreak(days) {
+      if (!days.length) return 0;
+      let best = 1, run = 1;
+      for (let i = 1; i < days.length; i++) {
+        const gap = (parse(days[i]) - parse(days[i - 1])) / DAY;
+        run = gap === 1 ? run + 1 : 1;
+        best = Math.max(best, run);
+      }
+      return best;
+    }
+
+    function currentStreak(days) {
+      if (!days.length) return 0;
+      const set = new Set(days);
+      const todayKey = fmt(new Date());
+      const last = days[days.length - 1];
+      // Counts as "current" only if the latest activity is today or yesterday.
+      if ((parse(todayKey) - parse(last)) / DAY > 1) return 0;
+      let cur = parse(last), streak = 0;
+      while (set.has(fmt(cur))) { streak++; cur = new Date(cur - DAY); }
+      return streak;
+    }
+
+    const tip = document.getElementById("tooltip");
+
+    function makeCell(key, count, inYear) {
+      const cell = document.createElement("div");
+      cell.className = "cell" + (level(count) ? " l" + level(count) : "") + (inYear ? "" : " out");
+      cell.dataset.label = `${count} submission${count === 1 ? "" : "s"} on ${pretty(key)}`;
+      cell.addEventListener("mousemove", (e) => {
+        tip.textContent = cell.dataset.label;
+        tip.style.left = e.clientX + "px";
+        tip.style.top = (e.clientY - 12) + "px";
+        tip.style.opacity = "1";
+      });
+      cell.addEventListener("mouseleave", () => { tip.style.opacity = "0"; });
+      return cell;
+    }
+
+    function renderYear(DATA, year) {
+      const jan1 = new Date(Date.UTC(year, 0, 1));
+      const dec31 = new Date(Date.UTC(year, 11, 31));
+      const gridStart = new Date(jan1 - jan1.getUTCDay() * DAY);
+
+      const heatmap = document.getElementById("heatmap");
+      const months = document.getElementById("months");
+      heatmap.innerHTML = "";
+      months.innerHTML = "";
+
+      let col = 0;
+      const labels = [];
+      for (let weekStart = gridStart.getTime(); weekStart <= dec31.getTime(); weekStart += 7 * DAY, col++) {
+        for (let d = 0; d < 7; d++) {
+          const date = new Date(weekStart + d * DAY);
+          const key = fmt(date);
+          const inYear = date.getUTCFullYear() === year;
+          const count = inYear ? (DATA[key] || 0) : 0;
+          heatmap.appendChild(makeCell(key, count, inYear));
+          // Month label sits above the week containing the 1st of that month.
+          if (inYear && date.getUTCDate() === 1) {
+            labels.push({ col, m: date.getUTCMonth() });
+          }
+        }
+      }
+
+      months.style.gridTemplateColumns = `repeat(${col}, var(--cell))`;
+      for (const { col: c, m } of labels) {
+        const span = document.createElement("span");
+        span.textContent = MONTHS[m];
+        span.style.gridColumn = `${c + 1} / span 4`;
+        months.appendChild(span);
+      }
+    }
+
+    function renderStats(DATA, problemsSolved) {
+      const days = Object.keys(DATA).sort();
+      const cur = currentStreak(days);
+      document.getElementById("stat-current").firstChild.textContent = cur;
+      document.getElementById("stat-longest").firstChild.textContent = longestStreak(days);
+      document.getElementById("stat-problems").textContent = problemsSolved;
+      document.getElementById("stat-active").firstChild.textContent = days.length;
+      document.getElementById("streak-days").textContent = cur;
+    }
+
+    function init(payload) {
+      // Accept the new shape { days, problemsSolved } or a bare day-count map.
+      const valid = payload && (payload.days || Object.keys(payload).length);
+      const src = valid ? payload : FALLBACK;
+      const data = src.days || src;
+      const problemsSolved = src.problemsSolved != null ? src.problemsSolved : FALLBACK.problemsSolved;
+      renderStats(data, problemsSolved);
+
+      const years = [...new Set(Object.keys(data).map((d) => +d.slice(0, 4)))];
+      const curYear = new Date().getUTCFullYear();
+      if (!years.includes(curYear)) years.push(curYear);
+      years.sort((a, b) => b - a);
+
+      const sel = document.getElementById("year-select");
+      sel.innerHTML = "";
+      for (const y of years) {
+        const o = document.createElement("option");
+        o.value = y; o.textContent = y;
+        sel.appendChild(o);
+      }
+      sel.value = String(curYear);
+      sel.addEventListener("change", () => renderYear(data, +sel.value));
+      renderYear(data, curYear);
+    }
+
+    fetch("./data.json", { cache: "no-store" })
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then((data) => init(data))
+      .catch(() => init(FALLBACK));
+  </script>
+</body>
+</html>
